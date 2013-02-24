@@ -28,18 +28,21 @@ def main():
 
     render(graph)
 
-def find_refs(resource, elem):
+def find_refs(context, elem):
     if isinstance(elem, dict):
         refs = []
         for k, v in elem.iteritems():
             if unicode(k) == unicode('Ref'):
                 assert isinstance(v, basestring), 'Expected a string: %s' % v
-                refs.append({'from': v, 'to': resource})
+                refs.append({'from': v, 'to': context})
+            elif unicode(k) == unicode('Fn::GetAtt'):
+                assert isinstance(v, list), 'Expected a list: %s' % v
+                refs.append({'from': v[0], 'to': context})
             else:
-                refs.extend(find_refs(resource, v))
+                refs.extend(find_refs(context, v))
         return refs
     elif isinstance(elem, list):
-        return map(lambda e: find_refs(resource, e), elem)
+        return map(lambda e: find_refs(context, e), elem)
     elif isinstance(elem, basestring):
         return []
     else:
