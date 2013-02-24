@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import json
+import sys
+from compiler.ast import flatten
+
+def main():
+    template = json.load(sys.stdin)
+
+    graph = {'nodes': [], 'edges':[]}
+
+    graph['name'] = template['Description']
+    for resource, details in template['Resources'].iteritems():
+        graph['nodes'].append(resource)
+        graph['edges'].extend(flatten(find_refs(resource, details)))
+    debug(graph['edges'])
+    render(graph)
+
+def find_refs(resource, elem):
+    if isinstance(elem, dict):
+        refs = []
+        for k, v in elem.iteritems():
+            if unicode(k) == unicode('Ref'):
+                assert isinstance(v, basestring), 'Expected a string: %s' % v
+                refs.append({'from': v, 'to': resource})
+            else:
+                refs.extend(find_refs(resource, v))
+        return refs
+    elif isinstance(elem, list):
+        return map(lambda e: find_refs(resource, e), elem)
+    elif isinstance(elem, basestring):
+        return []
+    else:
+        raise AssertionError('Unexpected type: %s' % elem)
+
+def render(graph):
+    print 'digraph "%s" {' % graph['name']
+    for n in graph['nodes']:
+        print '"%s";' % n
+    for e in graph['edges']:
+        print '"%s" -> "%s"' % (e['from'], e['to'])
+    print '}'
+
+def debug(*s):
+    print >>sys.stderr, s
+
+if __name__ == '__main__':
+    main()
