@@ -7,13 +7,24 @@ from compiler.ast import flatten
 def main():
     template = json.load(sys.stdin)
 
-    graph = {'nodes': [], 'edges': []}
+    graph = {'nodes': [], 'edges': [], 'subgraphs': []}
 
     graph['name'] = template['Description']
+
     for resource, details in template['Resources'].iteritems():
         graph['nodes'].append({'name': resource, 'details': details['Type']})
         graph['edges'].extend(flatten(find_refs(resource, details)))
-    debug(graph['edges'])
+
+    parameters = {'name': 'Parameters', 'nodes': []}
+    for parameter, details in template['Parameters'].iteritems():
+        parameters['nodes'].append({'name': parameter, 'details': details['Description']})
+    graph['subgraphs'].append(parameters)
+
+    outputs = {'name': 'Outputs', 'nodes': []}
+    for output, details in template['Outputs'].iteritems():
+        outputs['nodes'].append({'name': output, 'details': details.get('Description')})
+    graph['subgraphs'].append(outputs)
+
     render(graph)
 
 def find_refs(resource, elem):
@@ -40,6 +51,11 @@ def render(graph):
         print '"%s" [label="{\N|%s}"];' % (n['name'], n['details'])
     for e in graph['edges']:
         print '"%s" -> "%s"' % (e['from'], e['to'])
+    for s in graph['subgraphs']:
+        print 'subgraph clusterk%s {' % s['name']
+        for n in s['nodes']:
+            print '"%s" [label="{\N|%s}"];' % (n['name'], n['details'])
+        print '}'
     print '}'
 
 def debug(*s):
