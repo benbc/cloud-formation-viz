@@ -7,11 +7,11 @@ from compiler.ast import flatten
 def main():
     template = json.load(sys.stdin)
 
-    graph = {'nodes': [], 'edges':[]}
+    graph = {'nodes': [], 'edges': []}
 
     graph['name'] = template['Description']
     for resource, details in template['Resources'].iteritems():
-        graph['nodes'].append(resource)
+        graph['nodes'].append({'name': resource, 'details': details['Type']})
         graph['edges'].extend(flatten(find_refs(resource, details)))
     debug(graph['edges'])
     render(graph)
@@ -35,8 +35,9 @@ def find_refs(resource, elem):
 
 def render(graph):
     print 'digraph "%s" {' % graph['name']
+    print 'node [shape=Mrecord];'
     for n in graph['nodes']:
-        print '"%s";' % n
+        print '"%s" [label="{\N|%s}"];' % (n['name'], n['details'])
     for e in graph['edges']:
         print '"%s" -> "%s"' % (e['from'], e['to'])
     print '}'
