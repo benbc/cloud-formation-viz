@@ -23,6 +23,7 @@ def main():
     outputs = {'name': 'Outputs', 'nodes': []}
     for output, details in template['Outputs'].iteritems():
         outputs['nodes'].append({'name': output, 'details': details.get('Description')})
+        graph['edges'].extend(flatten(find_refs(output, details)))
     graph['subgraphs'].append(outputs)
 
     render(graph)
