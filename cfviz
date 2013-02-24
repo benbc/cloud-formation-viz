@@ -49,12 +49,11 @@ def find_refs(context, elem):
         raise AssertionError('Unexpected type: %s' % elem)
 
 def render(graph, subgraph=False):
-    def resolve_type(subgraph):
-        if subgraph:
-            return ('subgraph', 'cluster%s' % graph['name'])
-        else:
-            return ('digraph', graph['name'])
-    graph_type, graph_name = resolve_type(subgraph)
+    graph_type, graph_name = None, None
+    if subgraph:
+        graph_type, graph_name = 'subgraph', 'cluster%s' % graph['name']
+    else:
+        graph_type, graph_name = 'digraph', graph['name']
 
     print '%s "%s" {' % (graph_type, graph_name)
     print 'node [shape=Mrecord];'
