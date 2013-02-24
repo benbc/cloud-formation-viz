@@ -15,12 +15,12 @@ def main():
         graph['nodes'].append({'name': resource, 'details': details['Type']})
         graph['edges'].extend(flatten(find_refs(resource, details)))
 
-    parameters = {'name': 'Parameters', 'nodes': []}
+    parameters = {'name': 'Parameters', 'nodes': [], 'edges': [], 'subgraphs': []}
     for parameter, details in template['Parameters'].iteritems():
         parameters['nodes'].append({'name': parameter, 'details': details['Description']})
     graph['subgraphs'].append(parameters)
 
-    outputs = {'name': 'Outputs', 'nodes': []}
+    outputs = {'name': 'Outputs', 'nodes': [], 'edges': [], 'subgraphs': []}
     for output, details in template['Outputs'].iteritems():
         outputs['nodes'].append({'name': output, 'details': details.get('Description')})
         graph['edges'].extend(flatten(find_refs(output, details)))
@@ -48,18 +48,22 @@ def find_refs(context, elem):
     else:
         raise AssertionError('Unexpected type: %s' % elem)
 
-def render(graph):
-    print 'digraph "%s" {' % graph['name']
+def render(graph, subgraph=False):
+    def resolve_type(subgraph):
+        if subgraph:
+            return ('subgraph', 'cluster%s' % graph['name'])
+        else:
+            return ('digraph', graph['name'])
+    graph_type, graph_name = resolve_type(subgraph)
+
+    print '%s "%s" {' % (graph_type, graph_name)
     print 'node [shape=Mrecord];'
     for n in graph['nodes']:
         print '"%s" [label="{\N|%s}"];' % (n['name'], n['details'])
     for e in graph['edges']:
         print '"%s" -> "%s"' % (e['from'], e['to'])
     for s in graph['subgraphs']:
-        print 'subgraph clusterk%s {' % s['name']
-        for n in s['nodes']:
-            print '"%s" [label="{\N|%s}"];' % (n['name'], n['details'])
-        print '}'
+        render(s, True)
     print '}'
 
 def debug(*s):
