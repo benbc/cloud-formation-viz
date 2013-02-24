@@ -56,6 +56,8 @@ def render(graph, subgraph=False):
         graph_type, graph_name = 'digraph', graph['name']
 
     print '%s "%s" {' % (graph_type, graph_name)
+    print 'labeljust=l'
+    print 'label="%s"' % graph['name']
     print 'node [shape=Mrecord];'
     for n in graph['nodes']:
         print '"%s" [label="{\N|%s}"];' % (n['name'], n['details'] or '')
