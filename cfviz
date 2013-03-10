@@ -17,12 +17,12 @@ def main():
 
     parameters = {'name': 'Parameters', 'nodes': [], 'edges': [], 'subgraphs': [], 'rank': 'source'}
     for parameter, details in template['Parameters'].iteritems():
-        parameters['nodes'].append({'name': parameter, 'details': details['Description']})
+        parameters['nodes'].append({'name': parameter, 'details': details['Type']})
     graph['subgraphs'].append(parameters)
 
     outputs = {'name': 'Outputs', 'nodes': [], 'edges': [], 'subgraphs': []}
     for output, details in template['Outputs'].iteritems():
-        outputs['nodes'].append({'name': output, 'details': details.get('Description')})
+        outputs['nodes'].append({'name': output, 'details': details.get('Type')})
         graph['edges'].extend(flatten(find_refs(output, details)))
     graph['subgraphs'].append(outputs)
 
