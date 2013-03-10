@@ -9,16 +9,18 @@ def main():
 
     (graph, edges) = extract_graph(template['Description'], template['Resources'])
     graph['edges'].extend(edges)
+    handle_terminals(template, graph, 'Parameters', 'source')
+    handle_terminals(template, graph, 'Outputs', 'sink')
 
-    for name, elem, rank in [('Parameters', template['Parameters'], 'source'),
-                             ('Outputs', template['Outputs'], 'sink')]:
-        (subgraph, edges) = extract_graph(name, elem)
+    render(graph)
+
+def handle_terminals(template, graph, name, rank):
+    if name in template:
+        (subgraph, edges) = extract_graph(name, template[name])
         subgraph['rank'] = rank
         subgraph['style'] = 'filled,rounded'
         graph['subgraphs'].append(subgraph)
         graph['edges'].extend(edges)
-
-    render(graph)
 
 def extract_graph(name, elem):
     graph = {'name': name, 'nodes': [], 'edges': [], 'subgraphs': []}
