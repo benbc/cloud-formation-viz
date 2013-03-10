@@ -15,7 +15,7 @@ def main():
         graph['nodes'].append({'name': resource, 'details': details['Type']})
         graph['edges'].extend(flatten(find_refs(resource, details)))
 
-    parameters = {'name': 'Parameters', 'nodes': [], 'edges': [], 'subgraphs': []}
+    parameters = {'name': 'Parameters', 'nodes': [], 'edges': [], 'subgraphs': [], 'rank': 'source'}
     for parameter, details in template['Parameters'].iteritems():
         parameters['nodes'].append({'name': parameter, 'details': details['Description']})
     graph['subgraphs'].append(parameters)
@@ -44,6 +44,8 @@ def find_refs(context, elem):
     elif isinstance(elem, list):
         return map(lambda e: find_refs(context, e), elem)
     elif isinstance(elem, basestring):
+        return []
+    elif isinstance(elem, bool):
         return []
     else:
         raise AssertionError('Unexpected type: %s' % elem)
