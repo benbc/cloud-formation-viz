@@ -10,8 +10,11 @@ def main():
     (graph, edges) = extract_graph(template['Description'], template['Resources'])
     graph['edges'].extend(edges)
 
-    for name, elem in [('Parameters', template['Parameters']), ('Outputs', template['Outputs'])]:
+    for name, elem, rank in [('Parameters', template['Parameters'], 'source'),
+                             ('Outputs', template['Outputs'], 'sink')]:
         (subgraph, edges) = extract_graph(name, elem)
+        subgraph['rank'] = rank
+        subgraph['style'] = 'filled,rounded'
         graph['subgraphs'].append(subgraph)
         graph['edges'].extend(edges)
 
@@ -21,7 +24,7 @@ def extract_graph(name, elem):
     graph = {'name': name, 'nodes': [], 'edges': [], 'subgraphs': []}
     edges = []
     for item, details in elem.iteritems():
-        graph['nodes'].append({'name': item, 'details': details.get('Type')})
+        graph['nodes'].append({'name': item})
         edges.extend(flatten(find_refs(item, details)))
     return (graph, edges)
 
@@ -48,22 +51,19 @@ def find_refs(context, elem):
         raise AssertionError('Unexpected type: %s' % elem)
 
 def render(graph, subgraph=False):
-    graph_type, graph_name = None, None
-    if subgraph:
-        graph_type, graph_name = 'subgraph', 'cluster%s' % graph['name']
-    else:
-        graph_type, graph_name = 'digraph', graph['name']
-
-    print '%s "%s" {' % (graph_type, graph_name)
+    print '%s "%s" {' % ('subgraph' if subgraph else 'digraph', graph['name'])
     print 'labeljust=l;'
-    print 'label="%s";' % graph['name']
-    print 'node [shape=Mrecord];'
+    print 'node [shape=box];'
+    if 'style' in graph:
+        print 'node [style="%s"]' % graph['style']
+    if 'rank' in graph:
+        print 'rank=%s' % graph['rank']
     for n in graph['nodes']:
-        print '"%s" [label="{\N|%s}"];' % (n['name'], n['details'] or '')
-    for e in graph['edges']:
-        print '"%s" -> "%s";' % (e['from'], e['to'])
+        print '"%s"' % n['name']
     for s in graph['subgraphs']:
         render(s, True)
+    for e in graph['edges']:
+        print '"%s" -> "%s";' % (e['from'], e['to'])
     print '}'
 
 def debug(*s):
