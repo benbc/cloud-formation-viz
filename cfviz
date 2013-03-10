@@ -7,26 +7,23 @@ from compiler.ast import flatten
 def main():
     template = json.load(sys.stdin)
 
-    graph = {'nodes': [], 'edges': [], 'subgraphs': []}
+    (graph, edges) = extract_graph(template['Description'], template['Resources'])
+    graph['edges'].extend(edges)
 
-    graph['name'] = template['Description']
-
-    for resource, details in template['Resources'].iteritems():
-        graph['nodes'].append({'name': resource, 'details': details['Type']})
-        graph['edges'].extend(flatten(find_refs(resource, details)))
-
-    parameters = {'name': 'Parameters', 'nodes': [], 'edges': [], 'subgraphs': [], 'rank': 'source'}
-    for parameter, details in template['Parameters'].iteritems():
-        parameters['nodes'].append({'name': parameter, 'details': details['Type']})
-    graph['subgraphs'].append(parameters)
-
-    outputs = {'name': 'Outputs', 'nodes': [], 'edges': [], 'subgraphs': []}
-    for output, details in template['Outputs'].iteritems():
-        outputs['nodes'].append({'name': output, 'details': details.get('Type')})
-        graph['edges'].extend(flatten(find_refs(output, details)))
-    graph['subgraphs'].append(outputs)
+    for name, elem in [('Parameters', template['Parameters']), ('Outputs', template['Outputs'])]:
+        (subgraph, edges) = extract_graph(name, elem)
+        graph['subgraphs'].append(subgraph)
+        graph['edges'].extend(edges)
 
     render(graph)
+
+def extract_graph(name, elem):
+    graph = {'name': name, 'nodes': [], 'edges': [], 'subgraphs': []}
+    edges = []
+    for item, details in elem.iteritems():
+        graph['nodes'].append({'name': item, 'details': details.get('Type')})
+        edges.extend(flatten(find_refs(item, details)))
+    return (graph, edges)
 
 def find_refs(context, elem):
     if isinstance(elem, dict):
