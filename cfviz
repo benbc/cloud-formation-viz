@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import json
+from numbers import Number
 import sys
 from compiler.ast import flatten
 
@@ -48,6 +49,8 @@ def find_refs(context, elem):
     elif isinstance(elem, basestring):
         return []
     elif isinstance(elem, bool):
+        return []
+    elif isinstance(elem, Number):
         return []
     else:
         raise AssertionError('Unexpected type: %s' % elem)
