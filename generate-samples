@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+from HTMLParser import HTMLParser
+from os.path import basename, splitext
+import subprocess
+import urllib2
+from urlparse import urlparse
+
+EXAMPLES_URL = 'http://aws.amazon.com/cloudformation/aws-cloudformation-templates/'
+
+def main():
+    parser = LinkParser()
+    parser.feed(read_url(EXAMPLES_URL))
+    for template in filter(is_template, parser.links):
+        render(template)
+
+def is_template(url):
+    return urlparse(url).path.endswith('.template')
+
+def render(url):
+    template = urllib2.urlopen(url).read()
+    p = subprocess.Popen('./cfviz | dot -Tsvg -o %s' % output_for(url), shell=True,
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output, _ = p.communicate(input=template)
+    if output:
+        print(url)
+        print(output)
+
+def output_for(url):
+    name, _ = splitext(basename(urlparse(url).path))
+    return 'samples/%s.svg' % name
+
+class LinkParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            for attr, value in attrs:
+                if attr == 'href':
+                    self.links.append(value)
+
+def read_url(url):
+    return urllib2.urlopen(url).read()
+
+if __name__ == '__main__':
+    main()
