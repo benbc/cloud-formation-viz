@@ -13,7 +13,7 @@ need to have [Graphviz] [graphviz] installed for the output to be any
 use.
 
 The [samples] [samples] directory contains output of running the tool
-over the samples [aws-samples] provided by AWS.
+over the [samples] [aws-samples] provided by AWS.
 
 [aws-samples]: http://aws.amazon.com/cloudformation/aws-cloudformation-templates/
 [graphviz]: http://www.graphviz.org/
