@@ -5,15 +5,18 @@ from numbers import Number
 import sys
 from compiler.ast import flatten
 
+
 def main():
     template = json.load(sys.stdin)
 
-    (graph, edges) = extract_graph(template['Description'], template['Resources'])
+    (graph, edges) = extract_graph(
+        template['Description'], template['Resources'])
     graph['edges'].extend(edges)
     handle_terminals(template, graph, 'Parameters', 'source')
     handle_terminals(template, graph, 'Outputs', 'sink')
 
     render(graph)
+
 
 def handle_terminals(template, graph, name, rank):
     if name in template:
@@ -23,6 +26,7 @@ def handle_terminals(template, graph, name, rank):
         graph['subgraphs'].append(subgraph)
         graph['edges'].extend(edges)
 
+
 def extract_graph(name, elem):
     graph = {'name': name, 'nodes': [], 'edges': [], 'subgraphs': []}
     edges = []
@@ -30,6 +34,7 @@ def extract_graph(name, elem):
         graph['nodes'].append({'name': item})
         edges.extend(flatten(find_refs(item, details)))
     return (graph, edges)
+
 
 def find_refs(context, elem):
     if isinstance(elem, dict):
@@ -55,6 +60,7 @@ def find_refs(context, elem):
     else:
         raise AssertionError('Unexpected type: %s' % elem)
 
+
 def render(graph, subgraph=False):
     print '%s "%s" {' % ('subgraph' if subgraph else 'digraph', graph['name'])
     print 'labeljust=l;'
@@ -71,8 +77,10 @@ def render(graph, subgraph=False):
         print '"%s" -> "%s";' % (e['from'], e['to'])
     print '}'
 
+
 def debug(*s):
     print >>sys.stderr, s
+
 
 if __name__ == '__main__':
     main()
