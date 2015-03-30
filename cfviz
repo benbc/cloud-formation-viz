@@ -6,7 +6,11 @@ import sys
 from compiler.ast import flatten
 
 def main():
-    template = json.load(sys.stdin)
+    if sys.argv[1:2] != []:
+        with open(sys.argv[1]) as h:
+            template = json.load(h)
+    else:
+        template = json.load(sys.stdin)
 
     (graph, edges) = extract_graph(template['Description'], template['Resources'])
     graph['edges'].extend(edges)
