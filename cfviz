@@ -8,7 +8,7 @@ from compiler.ast import flatten
 def main():
     template = json.load(sys.stdin)
 
-    (graph, edges) = extract_graph(template['Description'], template['Resources'])
+    (graph, edges) = extract_graph(template.get('Description', ''), template['Resources'])
     graph['edges'].extend(edges)
     handle_terminals(template, graph, 'Parameters', 'source')
     handle_terminals(template, graph, 'Outputs', 'sink')
