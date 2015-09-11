@@ -12,6 +12,7 @@ def main():
     graph['edges'].extend(edges)
     handle_terminals(template, graph, 'Parameters', 'source')
     handle_terminals(template, graph, 'Outputs', 'sink')
+    graph['subgraphs'].append(handle_psuedo_params(graph['edges']))
 
     render(graph)
 
@@ -22,6 +23,16 @@ def handle_terminals(template, graph, name, rank):
         subgraph['style'] = 'filled,rounded'
         graph['subgraphs'].append(subgraph)
         graph['edges'].extend(edges)
+
+def handle_psuedo_params(edges):
+    graph = {'name': 'Psuedo Parameters', 'nodes': [], 'edges': [], 'subgraphs': []}
+    graph['shape'] = 'ellipse'
+    params = set()
+    for e in edges:
+        if e['from'].startswith(u'AWS::'):
+            params.add(e['from'])
+    graph['nodes'].extend({'name': n} for n in params)
+    return graph
 
 def extract_graph(name, elem):
     graph = {'name': name, 'nodes': [], 'edges': [], 'subgraphs': []}
@@ -58,7 +69,7 @@ def find_refs(context, elem):
 def render(graph, subgraph=False):
     print '%s "%s" {' % ('subgraph' if subgraph else 'digraph', graph['name'])
     print 'labeljust=l;'
-    print 'node [shape=box];'
+    print 'node [shape={}];'.format(graph.get('shape', 'box'))
     if 'style' in graph:
         print 'node [style="%s"]' % graph['style']
     if 'rank' in graph:
