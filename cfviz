@@ -4,13 +4,10 @@ import json
 from numbers import Number
 import sys
 from compiler.ast import flatten
+import yaml
 
 def main():
-    if sys.argv[1:2] != []:
-        with open(sys.argv[1]) as h:
-            template = json.load(h)
-    else:
-        template = json.load(sys.stdin)
+    template = open_cfn(sys.argv)
 
     (graph, edges) = extract_graph(template.get('Description', ''), template['Resources'])
     graph['edges'].extend(edges)
@@ -19,6 +16,23 @@ def main():
     graph['subgraphs'].append(handle_psuedo_params(graph['edges']))
 
     render(graph)
+
+def open_cfn(argv):
+    if argv[1:2] != []:
+        input_filename = argv[1]
+        with open(input_filename) as h:
+            if (".yml" in input_filename):
+                text = h.read()
+                # the !syntax doesn't parse in python's yaml library, and we're not reading to that depth
+                cfn_intrinsic_functions = ['!GetAtt','!Ref','!Sub']
+                for f in cfn_intrinsic_functions:
+                    text = text.replace(f,' ')
+                template = yaml.load(text)
+            else:
+                template = json.load(h)
+    else:
+        template = json.load(sys.stdin)
+    return template
 
 def handle_terminals(template, graph, name, rank):
     if name in template:
