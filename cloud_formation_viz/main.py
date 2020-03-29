@@ -1,10 +1,22 @@
 #!/usr/bin/env python
 
-import json
-from numbers import Number
 import sys
-from compiler.ast import flatten
+import json
 import yaml
+import datetime
+import collections
+from numbers import Number
+
+
+def flatten(x):
+    result = []
+    for el in x:
+        if isinstance(x, collections.Iterable) and not isinstance(el, dict):
+            result.extend(flatten(el))
+        else:
+            result.append(el)
+    return result
+
 
 def main():
     template = open_cfn(sys.argv)
@@ -17,14 +29,15 @@ def main():
 
     render(graph)
 
+
 def open_cfn(argv):
     if argv[1:2] != []:
         input_filename = argv[1]
         with open(input_filename) as h:
-            if (".yml" in input_filename):
+            if any(extension in input_filename for extension in ['.yml', '.yaml']):
                 text = h.read()
                 # the !syntax doesn't parse in python's yaml library, and we're not reading to that depth
-                cfn_intrinsic_functions = ['!GetAtt','!Ref','!Sub']
+                cfn_intrinsic_functions = ['!GetAtt', '!Ref', '!Sub']
                 for f in cfn_intrinsic_functions:
                     text = text.replace(f,' ')
                 template = yaml.load(text)
@@ -34,6 +47,7 @@ def open_cfn(argv):
         template = json.load(sys.stdin)
     return template
 
+
 def handle_terminals(template, graph, name, rank):
     if name in template:
         (subgraph, edges) = extract_graph(name, template[name])
@@ -41,6 +55,7 @@ def handle_terminals(template, graph, name, rank):
         subgraph['style'] = 'filled,rounded'
         graph['subgraphs'].append(subgraph)
         graph['edges'].extend(edges)
+
 
 def handle_psuedo_params(edges):
     graph = {'name': 'Psuedo Parameters', 'nodes': [], 'edges': [], 'subgraphs': []}
@@ -52,22 +67,24 @@ def handle_psuedo_params(edges):
     graph['nodes'].extend({'name': n} for n in params)
     return graph
 
+
 def extract_graph(name, elem):
     graph = {'name': name, 'nodes': [], 'edges': [], 'subgraphs': []}
     edges = []
-    for item, details in elem.iteritems():
+    for item, details in elem.items():
         graph['nodes'].append({'name': item})
         edges.extend(flatten(find_refs(item, details)))
     return (graph, edges)
 
+
 def find_refs(context, elem):
     if isinstance(elem, dict):
         refs = []
-        for k, v in elem.iteritems():
-            if unicode(k) == unicode('Ref'):
-                assert isinstance(v, basestring), 'Expected a string: %s' % v
+        for k, v in elem.items():
+            if k == 'Ref':
+                assert isinstance(v, str), 'Expected a string: %s' % v
                 refs.append({'from': v, 'to': context})
-            elif unicode(k) == unicode('Fn::GetAtt'):
+            elif k == 'Fn::GetAtt':
                 assert isinstance(v, list), 'Expected a list: %s' % v
                 refs.append({'from': v[0], 'to': context})
             else:
@@ -75,33 +92,38 @@ def find_refs(context, elem):
         return refs
     elif isinstance(elem, list):
         return map(lambda e: find_refs(context, e), elem)
-    elif isinstance(elem, basestring):
+    elif isinstance(elem, str):
         return []
     elif isinstance(elem, bool):
         return []
     elif isinstance(elem, Number):
         return []
+    elif isinstance(elem, datetime.date):
+        return []
     else:
         raise AssertionError('Unexpected type: %s' % elem)
 
+
 def render(graph, subgraph=False):
-    print '%s "%s" {' % ('subgraph' if subgraph else 'digraph', graph['name'])
-    print 'labeljust=l;'
-    print 'node [shape={}];'.format(graph.get('shape', 'box'))
+    print('%s "%s" {' % ('subgraph' if subgraph else 'digraph', graph['name']))
+    print('labeljust=l;')
+    print('node [shape={}];'.format(graph.get('shape', 'box')))
     if 'style' in graph:
-        print 'node [style="%s"]' % graph['style']
+        print('node [style="%s"]' % graph['style'])
     if 'rank' in graph:
-        print 'rank=%s' % graph['rank']
+        print('rank=%s' % graph['rank'])
     for n in graph['nodes']:
-        print '"%s"' % n['name']
+        print('"%s"' % n['name'])
     for s in graph['subgraphs']:
         render(s, True)
     for e in graph['edges']:
-        print '"%s" -> "%s";' % (e['from'], e['to'])
-    print '}'
+        print('"%s" -> "%s";' % (e['from'], e['to']))
+    print('}')
+
 
 def debug(*s):
-    print >>sys.stderr, s
+    print(sys.stderr, s)
+
 
 if __name__ == '__main__':
     main()
