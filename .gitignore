@@ -35,3 +35,7 @@ nosetests.xml
 .pydevproject
 out.svg
 test.svg
+
+.DS_Store
+.idea/
+.venv/

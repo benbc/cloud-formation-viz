@@ -1,1 +1,1 @@
-cat "$1" | ./cfviz | dot -Tsvg -otest.svg
+cat "$1" | cfviz | dot -Tsvg -otest.svg
