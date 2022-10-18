@@ -11,7 +11,7 @@ from numbers import Number
 def flatten(x):
     result = []
     for el in x:
-        if isinstance(x, collections.Iterable) and not isinstance(el, dict):
+        if isinstance(x, collections.abc.Iterable) and not isinstance(el, dict):
             result.extend(flatten(el))
         else:
             result.append(el)
@@ -40,7 +40,7 @@ def open_cfn(argv):
                 cfn_intrinsic_functions = ['!GetAtt', '!Ref', '!Sub']
                 for f in cfn_intrinsic_functions:
                     text = text.replace(f,' ')
-                template = yaml.load(text)
+                template = yaml.load(text, Loader=yaml.Loader)
             else:
                 template = json.load(h)
     else:
